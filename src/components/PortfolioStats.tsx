@@ -1,9 +1,23 @@
 export function PortfolioStats({ slots }: { slots: any[] }) {
   if (!slots || slots.length === 0) return null;
 
-  const totalInvestment = slots.reduce((acc, slot) => acc + (slot.originalPrice || 0), 0);
-  const currentValue = slots.reduce((acc, slot) => acc + (slot.currentPrice || 0), 0);
-  const profitLoss = currentValue - totalInvestment;
+  let totalInvestment = 0;
+  let currentValue = 0;
+  let profitLoss = 0;
+
+  slots.forEach(slot => {
+    const boughtPrice = slot.boughtAtPrice || slot.originalPrice || 0;
+    const isSold = slot.status === "ai_priced" || slot.status === "available";
+
+    if (isSold) {
+      const soldPrice = slot.soldAtPrice || slot.currentPrice || 0;
+      profitLoss += (soldPrice - boughtPrice);
+    } else {
+      totalInvestment += boughtPrice;
+      currentValue += slot.currentPrice || 0;
+      profitLoss += ((slot.currentPrice || 0) - boughtPrice);
+    }
+  });
 
   return (
     <div className="grid grid-cols-3 gap-3 mb-6">

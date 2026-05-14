@@ -1,4 +1,5 @@
-import { Calendar, Clock, MapPin, Utensils, HeartPulse, Bed, Ticket } from "lucide-react";
+import { useState } from 'react';
+import { Calendar, Clock, MapPin, Utensils, HeartPulse, Bed, Ticket, ChevronDown, ChevronUp } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface SlotCardProps {
@@ -6,10 +7,12 @@ interface SlotCardProps {
   actionText: string;
   onAction: (id: string) => void;
   isLoading?: boolean;
+  isSold?: boolean;
 }
 
-export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCardProps) {
+export function SlotCard({ slotItem, actionText, onAction, isLoading, isSold }: SlotCardProps) {
   const isAiPriced = slotItem.isAiPriced || slotItem.status === "ai_priced";
+  const [showHistory, setShowHistory] = useState(false);
 
   const getCategoryConfig = (category: string) => {
     switch(category) {
@@ -24,12 +27,19 @@ export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCard
 
   return (
     <div className={`p-5 mb-4 rounded-2xl transition-all duration-300 relative ${
-        isAiPriced 
+        isSold 
+          ? "bg-[#111] border border-[#222] opacity-75 grayscale-[20%]"
+          : isAiPriced 
           ? "bg-[#1A1A1A] border border-white/50 shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
           : "bg-[#1A1A1A] border border-[#2A2A2A]"
       }`}
     >
-      {isAiPriced && (
+      {isSold && (
+        <div className="absolute top-0 right-0 bg-red-500/20 text-red-400 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg border-b border-l border-red-500/30">
+          SATILDI
+        </div>
+      )}
+      {!isSold && isAiPriced && (
         <div className="absolute top-0 right-0 bg-white text-black text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
           AI PRICED
         </div>
@@ -60,7 +70,34 @@ export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCard
         </div>
       </div>
 
-      {slotItem.aiReason && (
+      {slotItem.priceHistory && slotItem.priceHistory.length > 0 && (
+        <div className="mb-4">
+          <button 
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center text-xs text-gray-400 hover:text-white transition-colors"
+          >
+            {showHistory ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+            Fiyatlandırma Geçmişi (AI Analizleri)
+          </button>
+          
+          {showHistory && (
+            <div className="mt-3 space-y-3 bg-[#111] p-3 rounded-lg border border-[#333] max-h-40 overflow-y-auto">
+              {slotItem.priceHistory.map((history: any, idx: number) => (
+                <div key={idx} className="border-l-2 border-white/20 pl-3 py-1 relative">
+                  <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-white/50"></div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-white">${history.price}</span>
+                    <span className="text-[10px] text-gray-500">{new Date(history.timestamp).toLocaleDateString()} {new Date(history.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 italic">"{history.reason}"</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {slotItem.aiReason && !showHistory && (
         <div className="mb-4 p-3 rounded-lg bg-[#2A2A2A] border border-[#3A3A3A]">
           <p className="text-xs text-gray-300">
             <span className="font-bold text-white">AI Notu:</span> {slotItem.aiReason}
@@ -87,8 +124,10 @@ export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCard
 
       <button 
         onClick={() => onAction(slotItem._id || slotItem.id)}
-        disabled={isLoading}
-        className="w-full bg-white text-black font-semibold py-3 rounded-xl disabled:opacity-50 transition-opacity"
+        disabled={isLoading || isSold}
+        className={`w-full font-semibold py-3 rounded-xl disabled:opacity-50 transition-opacity ${
+          isSold ? "bg-red-500/20 text-red-400 cursor-not-allowed" : "bg-white text-black"
+        }`}
       >
         {isLoading ? "İşleniyor..." : actionText}
       </button>

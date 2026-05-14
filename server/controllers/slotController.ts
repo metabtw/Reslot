@@ -35,6 +35,13 @@ export const getAllSlots = async (req: Request, res: Response): Promise<void> =>
 export const buySlot = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { userId } = req.body;
+    
+    if (!userId) {
+      res.status(400).json({ error: "User ID is required" });
+      return;
+    }
+
     const slotRef = doc(db, "slots", id);
     const slotSnap = await getDoc(slotRef);
     
@@ -43,12 +50,15 @@ export const buySlot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
+    const slotData = slotSnap.data();
+
     await updateDoc(slotRef, {
       status: "owned",
-      ownerId: "user_001"
+      ownerId: userId,
+      boughtAtPrice: slotData.currentPrice
     });
     
-    res.json({ id, ...slotSnap.data(), status: "owned", ownerId: "user_001" });
+    res.json({ id, ...slotData, status: "owned", ownerId: userId, boughtAtPrice: slotData.currentPrice });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Satın alma başarısız" });
@@ -138,6 +148,8 @@ Format: {"newPrice": <number>, "aiReason": "<one sentence>"}`;
       aiReason: result.aiReason || "Yapay zeka analizini tamamladı.",
       status: "ai_priced",
       ownerId: null,
+      previousOwnerId: slotData.ownerId,
+      soldAtPrice: result.newPrice || slotData.currentPrice,
       isAiPriced: true,
       priceHistory: [...currentHistory, newHistoryEntry]
     };

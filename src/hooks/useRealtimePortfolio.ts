@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where, or } from "firebase/firestore";
 import { db } from "../firebase";
 
 export function useRealtimePortfolio(userId: string) {
@@ -13,7 +13,13 @@ export function useRealtimePortfolio(userId: string) {
     }
 
     const slotsCollection = collection(db, "slots");
-    const q = query(slotsCollection, where("ownerId", "==", userId), where("status", "==", "owned"));
+    const q = query(
+      slotsCollection, 
+      or(
+        where("ownerId", "==", userId),
+        where("previousOwnerId", "==", userId)
+      )
+    );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const updated = snapshot.docs.map(doc => ({ _id: doc.id, id: doc.id, ...doc.data() }));

@@ -5,17 +5,20 @@ import { SlotCard } from '../components/SlotCard';
 import { useRealtimeSlots } from '../hooks/useRealtimeSlots';
 import { MarketPulse } from '../components/MarketPulse';
 import { useToast } from '../components/ToastContext';
+import { useAuthContext, useAuth } from '../hooks/useAuth';
 
 export function MarketScreen() {
   const { slots, loading } = useRealtimeSlots();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const user = useAuthContext();
+  const { logout } = useAuth();
 
   const handleBuy = async (id: string) => {
     setActionLoading(id);
     try {
-      await api.buySlot(id);
+      await api.buySlot(id, user?.uid || "unknown");
       showToast("Slot başarıyla satın alındı!", "success");
     } catch (error) {
       console.error("Buy failed", error);
@@ -64,7 +67,10 @@ export function MarketScreen() {
           </div>
           <button onClick={handleDemo} className="opacity-0 hover:opacity-100 focus:opacity-100 text-xs ml-2 bg-[#2A2A2A] px-2 py-1 rounded transition-opacity cursor-pointer">🎬 Demo</button>
         </div>
-        <button onClick={handleSeed} className="text-xs text-gray-500 underline border border-gray-800 px-2 py-1 rounded">Veri Yükle</button>
+        <div className="flex flex-col items-end gap-2">
+          <button onClick={logout} className="text-xs text-red-400 underline border border-red-900/30 px-2 py-1 rounded">Çıkış Yap</button>
+          <button onClick={handleSeed} className="text-xs text-gray-500 underline border border-gray-800 px-2 py-1 rounded">Veri Yükle</button>
+        </div>
       </div>
 
       {slots.length === 0 ? (

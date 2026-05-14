@@ -9,8 +9,12 @@ export const api = {
     const res = await fetch(`${API_BASE}/portfolio/${userId}`);
     return res.json();
   },
-  buySlot: async (id: string) => {
-    const res = await fetch(`${API_BASE}/${id}/buy`, { method: 'POST' });
+  buySlot: async (id: string, userId: string) => {
+    const res = await fetch(`${API_BASE}/${id}/buy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
     return res.json();
   },
   analyzeAndSell: async (id: string) => {
