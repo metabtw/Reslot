@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, Utensils, HeartPulse, Bed, Ticket } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface SlotCardProps {
@@ -10,6 +10,17 @@ interface SlotCardProps {
 
 export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCardProps) {
   const isAiPriced = slotItem.isAiPriced || slotItem.status === "ai_priced";
+
+  const getCategoryConfig = (category: string) => {
+    switch(category) {
+      case 'restaurant': return { icon: <Utensils className="w-5 h-5" />, color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' };
+      case 'clinic': return { icon: <HeartPulse className="w-5 h-5" />, color: 'bg-rose-500/20 text-rose-400 border-rose-500/30' };
+      case 'hotel': return { icon: <Bed className="w-5 h-5" />, color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
+      default: return { icon: <Ticket className="w-5 h-5" />, color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+    }
+  };
+
+  const catConfig = getCategoryConfig(slotItem.category);
 
   return (
     <div className={`p-5 mb-4 rounded-2xl transition-all duration-300 relative ${
@@ -24,7 +35,12 @@ export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCard
         </div>
       )}
       <div className="flex justify-between items-start mb-3">
-        <h3 className="text-lg font-bold text-white max-w-[75%] leading-tight">{slotItem.name}</h3>
+        <div className="flex items-center gap-3 max-w-[70%]">
+          <div className={`p-2 rounded-xl border ${catConfig.color}`}>
+            {catConfig.icon}
+          </div>
+          <h3 className="text-lg font-bold text-white leading-tight">{slotItem.name}</h3>
+        </div>
         <div className="text-right">
           <div className="text-xl font-bold text-white">${slotItem.currentPrice}</div>
           {slotItem.originalPrice !== slotItem.currentPrice && (

@@ -1,27 +1,11 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
 import { SlotCard } from '../components/SlotCard';
+import { useRealtimePortfolio } from '../hooks/useRealtimePortfolio';
+import { PortfolioStats } from '../components/PortfolioStats';
 
 export function PortfolioScreen() {
-  const [slots, setSlots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { slots, loading } = useRealtimePortfolio("user_001");
   const navigate = useNavigate();
-
-  const fetchPortfolio = async () => {
-    try {
-      const data = await api.getPortfolioSlots("user_001");
-      setSlots(data);
-    } catch (error) {
-      console.error("Failed to fetch portfolio", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
 
   const handleAnalyze = (id: string) => {
     navigate(`/analyze/${id}`);
@@ -37,6 +21,8 @@ export function PortfolioScreen() {
         <h1 className="text-3xl font-bold tracking-tight">Portföyüm</h1>
         <p className="text-gray-400 text-sm mt-1">Sahip olduğunuz slotlar</p>
       </div>
+
+      <PortfolioStats slots={slots} />
 
       {slots.length === 0 ? (
         <div className="text-center text-gray-500 py-10">Henüz slot almadınız.</div>

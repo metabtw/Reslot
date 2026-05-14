@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import slotRoutes from "./routes/slotRoutes.js";
+import { autoPriceRandomSlots } from "./controllers/slotController.js";
 
 async function startServer() {
   const app = express();
@@ -27,6 +28,11 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server çalışıyor http://localhost:${PORT}`);
+    
+    // Start auto pricing loop every 60 seconds
+    setInterval(() => {
+      autoPriceRandomSlots();
+    }, 60000);
   });
 }
 

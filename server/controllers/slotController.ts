@@ -189,3 +189,70 @@ export const seedSlots = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: "Örnek veri ekleme başarısız" });
   }
 };
+
+export const autoPriceRandomSlots = async () => {
+  try {
+    const q = query(slotsCollection, where("status", "in", ["available", "ai_priced"]));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) return;
+    
+    const docs = snapshot.docs;
+    const numToPick = Math.min(docs.length, Math.floor(Math.random() * 2) + 1);
+    const pickedDocs = [];
+    
+    const shuffled = [...docs].sort(() => 0.5 - Math.random());
+    pickedDocs.push(...shuffled.slice(0, numToPick));
+    
+    for (const docSnap of pickedDocs) {
+      const slotData = docSnap.data();
+      const randomEvent = mockEvents[Math.floor(Math.random() * mockEvents.length)];
+      
+      let result = { newPrice: slotData.currentPrice, aiReason: `Otomatik analiz: ${randomEvent.event}` };
+      
+      if (ai) {
+        const prompt = `You are a dynamic pricing agent. Target slot: ${slotData.name}. 
+Original price: ${slotData.originalPrice} USD. 
+Current market event: ${randomEvent.event} (Impact: ${randomEvent.impact}). 
+The current price is ${slotData.currentPrice} USD.
+Calculate a new fair market price. 
+Return ONLY a raw JSON object with no markdown, no backticks, no explanation outside JSON.
+Format: {"newPrice": <number>, "aiReason": "<one sentence>"}`;
+
+        try {
+          const response = await ai.models.generateContent({
+            model: "gemini-1.5-flash",
+            contents: prompt,
+          });
+
+          const text = response.text || "{}";
+          const cleanedText = text.replace(/\`\`\`json/g, "").replace(/\`\`\`/g, "").trim();
+          result = JSON.parse(cleanedText);
+        } catch (aiError) {
+          console.error("Auto AI pricing failed for", slotData.name, aiError);
+        }
+      }
+      
+      const newHistoryEntry = {
+        price: result.newPrice || slotData.currentPrice,
+        timestamp: new Date().toISOString(),
+        reason: result.aiReason || "Otomatik YZ analizi"
+      };
+
+      const currentHistory = slotData.priceHistory || [];
+
+      const updates = {
+        currentPrice: result.newPrice || slotData.currentPrice,
+        aiReason: result.aiReason || "Otomatik YZ analizini tamamladı.",
+        status: "ai_priced",
+        isAiPriced: true,
+        priceHistory: [...currentHistory, newHistoryEntry]
+      };
+      
+      await updateDoc(docSnap.ref, updates);
+      console.log(`[Auto AI] Priced: ${slotData.name} -> $${updates.currentPrice}`);
+    }
+  } catch (error) {
+    console.error("Auto pricing interval error:", error);
+  }
+};

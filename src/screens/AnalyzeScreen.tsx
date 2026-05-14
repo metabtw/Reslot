@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Calendar, MapPin, Clock } from 'lucide-react';
+import { useToast } from '../components/ToastContext';
 
 export function AnalyzeScreen() {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +11,7 @@ export function AnalyzeScreen() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<string>("");
+  const { showToast } = useToast();
 
   useEffect(() => {
     // In a real app we'd fetch the single slot. 
@@ -58,6 +60,7 @@ export function AnalyzeScreen() {
               if (data.step) {
                 setAnalysisStep(data.step);
               } else if (data.done) {
+                showToast("Analiz tamamlandı, yeni fiyat belirlendi!", "success");
                 navigate("/");
                 return;
               } else if (data.error) {
