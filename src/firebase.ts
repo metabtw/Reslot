@@ -1,9 +1,18 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import config from "../firebase-applet-config.json";
 
-const app = initializeApp(config);
-export const db = getFirestore(app, (config as any).firestoreDatabaseId);
+const firebaseConfig = {
+  apiKey: "AIzaSyAIZ9mFKk7s5BeIwu9ZO7bYi0KAFS1SdNU",
+  authDomain: "reslot-941ac.firebaseapp.com",
+  projectId: "reslot-941ac",
+  storageBucket: "reslot-941ac.firebasestorage.app",
+  messagingSenderId: "742769406274",
+  appId: "1:742769406274:web:9f190fa4be7695962b18db",
+  measurementId: "G-K7H445RD0V"
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();

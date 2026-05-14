@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Calendar, MapPin, Clock } from 'lucide-react';
 import { useToast } from '../components/ToastContext';
+import { useAuthContext } from '../hooks/useAuth';
 
 export function AnalyzeScreen() {
   const { id } = useParams<{ id: string }>();
@@ -12,13 +13,15 @@ export function AnalyzeScreen() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<string>("");
   const { showToast } = useToast();
+  const user = useAuthContext();
 
   useEffect(() => {
     // In a real app we'd fetch the single slot. 
     // Here we'll fetch portfolio and find it.
     const fetchSlot = async () => {
       try {
-        const slots = await api.getPortfolioSlots("user_001");
+        if (!user?.uid) return;
+        const slots = await api.getPortfolioSlots(user.uid);
         const found = slots.find((s: any) => (s._id || s.id) === id);
         if (found) setSlot(found);
         else navigate("/portfolio");
@@ -29,7 +32,7 @@ export function AnalyzeScreen() {
       }
     };
     fetchSlot();
-  }, [id, navigate]);
+  }, [id, navigate, user]);
 
   const handleAnalyzeAndSell = async () => {
     if (!id) return;

@@ -43,7 +43,7 @@ export function MarketScreen() {
         if (marketSlots.length > 0) {
           const slotToBuy = marketSlots[0];
           const id = slotToBuy._id || slotToBuy.id;
-          await api.buySlot(id);
+          await api.buySlot(id, user?.uid || "unknown");
           navigate(`/analyze/${id}`);
         }
       } catch (e) {
