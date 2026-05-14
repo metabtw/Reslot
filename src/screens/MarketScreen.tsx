@@ -1,32 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../services/api';
 import { SlotCard } from '../components/SlotCard';
+import { useRealtimeSlots } from '../hooks/useRealtimeSlots';
+import { MarketPulse } from '../components/MarketPulse';
 
 export function MarketScreen() {
-  const [slots, setSlots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { slots, loading } = useRealtimeSlots();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  const fetchSlots = async () => {
-    try {
-      const data = await api.getMarketSlots();
-      setSlots(data);
-    } catch (error) {
-      console.error("Failed to fetch market slots", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSlots();
-  }, []);
 
   const handleBuy = async (id: string) => {
     setActionLoading(id);
     try {
       await api.buySlot(id);
-      await fetchSlots();
     } catch (error) {
       console.error("Buy failed", error);
     } finally {
@@ -35,9 +20,7 @@ export function MarketScreen() {
   };
 
   const handleSeed = async () => {
-    setLoading(true);
     await api.seedSlots();
-    await fetchSlots();
   };
 
   if (loading) {
@@ -46,6 +29,7 @@ export function MarketScreen() {
 
   return (
     <div className="pb-24 pt-8 px-4 h-full overflow-y-auto w-full">
+      <MarketPulse slots={slots} />
       <div className="flex justify-between items-end mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Market</h1>

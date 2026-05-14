@@ -9,6 +9,7 @@ export function AnalyzeScreen() {
   const [slot, setSlot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState<string>("");
 
   useEffect(() => {
     // In a real app we'd fetch the single slot. 
@@ -31,9 +32,45 @@ export function AnalyzeScreen() {
   const handleAnalyzeAndSell = async () => {
     if (!id) return;
     setAnalyzing(true);
+    setAnalysisStep("Bağlantı kuruluyor...");
+    
     try {
-      await api.analyzeAndSell(id);
-      navigate("/"); // go back to market to see the list
+      const response = await fetch(`/api/slots/${id}/analyze-and-sell`, {
+        method: 'POST',
+      });
+
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.step) {
+                setAnalysisStep(data.step);
+              } else if (data.done) {
+                navigate("/");
+                return;
+              } else if (data.error) {
+                console.error(data.error);
+                setAnalyzing(false);
+                return;
+              }
+            } catch (e) {
+              // Ignore partial chunk parse errors
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error(error);
       setAnalyzing(false);
@@ -74,7 +111,7 @@ export function AnalyzeScreen() {
         {analyzing ? (
           <div className="flex flex-col items-center justify-center p-6 bg-[#1A1A1A] rounded-2xl border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-pulse">
             <div className="w-10 h-10 border-t-2 border-white rounded-full animate-spin mb-4"></div>
-            <p className="text-white font-medium text-center">Gemini AI olayları analiz ediyor ve yeni fiyatı belirliyor...</p>
+            <p className="text-white font-medium text-center">{analysisStep || "Gemini AI olayları analiz ediyor..."}</p>
           </div>
         ) : (
           <button 

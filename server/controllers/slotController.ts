@@ -80,6 +80,24 @@ export const analyzeAndSell = async (req: Request, res: Response): Promise<void>
     }
 
     const slotData = slotSnap.data();
+
+    // Start SSE stream
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const steps = [
+      "🔍 Piyasa olayları taranıyor...",
+      "📊 Tarihsel fiyat verisi analiz ediliyor...",
+      "🌦️ Dış etkenler değerlendiriliyor...",
+      "💡 Optimum fiyat hesaplanıyor..."
+    ];
+    
+    for (const step of steps) {
+      res.write(`data: ${JSON.stringify({ step })}\n\n`);
+      await new Promise(r => setTimeout(r, 800));
+    }
+
     const randomEvent = mockEvents[Math.floor(Math.random() * mockEvents.length)];
 
     let result = { newPrice: slotData.currentPrice, aiReason: "Piyasa koşulları standart." };
@@ -107,20 +125,35 @@ Format: {"newPrice": <number>, "aiReason": "<one sentence>"}`;
       }
     }
 
+    const newHistoryEntry = {
+      price: result.newPrice || slotData.currentPrice,
+      timestamp: new Date().toISOString(),
+      reason: result.aiReason || "Yapay zeka analizi"
+    };
+
+    const currentHistory = slotData.priceHistory || [];
+
     const updates = {
       currentPrice: result.newPrice || slotData.currentPrice,
       aiReason: result.aiReason || "Yapay zeka analizini tamamladı.",
       status: "ai_priced",
       ownerId: null,
-      isAiPriced: true
+      isAiPriced: true,
+      priceHistory: [...currentHistory, newHistoryEntry]
     };
     
     await updateDoc(slotRef, updates);
     
-    res.json({ id, ...slotData, ...updates });
+    res.write(`data: ${JSON.stringify({ done: true, result: { id, ...slotData, ...updates } })}\n\n`);
+    res.end();
   } catch (error) {
     console.error("Analiz hatası:", error);
-    res.status(500).json({ error: "Analiz başarısız" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Analiz başarısız" });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: "Analiz başarısız" })}\n\n`);
+      res.end();
+    }
   }
 };
 
@@ -141,9 +174,14 @@ export const seedSlots = async (req: Request, res: Response): Promise<void> => {
       { name: "Dağ Evi - Hafta Sonu", category: "hotel", originalPrice: 300, currentPrice: 300, date: "2024-06-20", location: "Uludağ", status: "available", ownerId: null, isAiPriced: false, aiReason: null }
     ];
 
+    const timestamp = new Date().toISOString();
     for (const data of sampleSlots) {
       const newRef = doc(slotsCollection);
-      await setDoc(newRef, data);
+      const slotDataWithHistory = {
+        ...data,
+        priceHistory: [{ price: data.originalPrice, timestamp, reason: "Başlangıç fiyatı" }]
+      };
+      await setDoc(newRef, slotDataWithHistory);
     }
     res.json({ message: "Örnek veriler başarıyla eklendi." });
   } catch (error) {

@@ -1,4 +1,5 @@
 import { Calendar, Clock, MapPin } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface SlotCardProps {
   slotItem: any;
@@ -48,6 +49,23 @@ export function SlotCard({ slotItem, actionText, onAction, isLoading }: SlotCard
           <p className="text-xs text-gray-300">
             <span className="font-bold text-white">AI Notu:</span> {slotItem.aiReason}
           </p>
+        </div>
+      )}
+
+      {slotItem.priceHistory && slotItem.priceHistory.length > 1 && (
+        <div className="h-16 w-full mb-4 -ml-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={slotItem.priceHistory}>
+              <Line type="monotone" dataKey="price" stroke="#ffffff" strokeWidth={2} dot={false}/>
+              <XAxis dataKey="timestamp" hide />
+              <YAxis domain={['auto', 'auto']} hide />
+              <Tooltip 
+                contentStyle={{ background: '#1A1A1A', border: '1px solid #333', borderRadius: '8px', fontSize: '12px' }}
+                labelFormatter={() => ''}
+                formatter={(value: any) => [`$${value}`, 'Fiyat']}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       )}
 
