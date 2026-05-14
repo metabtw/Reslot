@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "Slot": {
+      "title": "Slot",
+      "description": "A bookable time slot.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["restaurant", "hotel", "clinic"] },
+        "originalPrice": { "type": "number" },
+        "currentPrice": { "type": "number" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "owned", "ai_priced"] },
+        "ownerId": { "type": "string" },
+        "aiReason": { "type": "string" },
+        "isAiPriced": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "category", "originalPrice", "currentPrice", "date", "location", "status"]
+    }
+  },
+  "firestore": {
+    "/slots/{slotId}": {
+      "schema": { "$ref": "#/entities/Slot" },
+      "description": "All bookable slots."
+    }
+  }
+}

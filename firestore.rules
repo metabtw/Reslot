@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // MVP Level permissive rules since NO auth system is deployed 
+    // and userId is hardcoded to "user_001" everywhere as per strict MVP scope.
+    match /slots/{slotId} {
+      allow read, write: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
